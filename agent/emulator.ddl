@@ -9,32 +9,39 @@ metadata :name        => "emulator",
 requires :mcollective => "2.9.0"
 
 action "status", :description => "Status of the running emulator" do
+  display :always
+
   input :port,
         :description => "Port to query for status",
         :prompt => "Monitor Port",
         :type => :integer,
-        :optional => true,
+        :optional => false,
         :default => 8080
 
   output :name,
          :description => "Instance name",
-         :display_as => "Name"
+         :display_as => "Name",
+         :default => "unknown"
 
   output :running,
          :description => "Is the instance running",
-         :display_as => "Running"
+         :display_as => "Running",
+         :default => false
 
   output :pid,
          :description => "Running PID",
-         :display_as => "PID"
+         :display_as => "PID",
+         :default => -1
 
   output :tls,
          :description => "TLS Enabled",
-         :display_as => "TLS"
+         :display_as => "TLS",
+         :default => false
 
   output :memory,
          :description => "Memory used in bytes",
-         :display_as => "Memory (B)"
+         :display_as => "Memory (B)",
+         :default => 0
 
   summarize do
     aggregate summary(:running)
@@ -47,24 +54,32 @@ action "download", :description => "Downloads the emulator binary" do
         :description => "HTTP or HTTPS URL to fetch the file from",
         :prompt => "Emulator source URL",
         :type => :string,
-        :optional => false
+        :optional => false,
+        :maxlength => "256",
+        :validation => "."
 
-  input :target,
-        :description => "Location to store the downloaded emulator in",
-        :prompt => "Target",
-        :type => :string,
-        :optional => false
-
-  output :status,
+  output :success,
          :description => "true if the emulator was downloaded",
          :display_as => "Downloaded"
 
+  output :size,
+         :description => "Size of file downloaded",
+         :display_as => "Size"
+
   summarize do
-    aggregate summary(:status)
+    aggregate summary(:success)
+    aggregate summary(:size)
   end
 end
 
 action "stop", :description => "Stops the running emulator instance" do
+  input :port,
+        :description => "Port to query for status",
+        :prompt => "Monitor Port",
+        :type => :integer,
+        :optional => false,
+        :default => 8080
+
   output :status,
          :description => "true if the emulator stopped",
          :display_as => "Stopped"
@@ -79,40 +94,52 @@ action "start", :description => "Start an emulator instance" do
         :prompt => "Name",
         :description => "Instance Name",
         :type => :string,
-        :optional => true
+        :optional => true,
+        :maxlength => "16",
+        :validation => '^\w+$'
+
+  input :instances,
+        :prompt => "Instances",
+        :description => "Number of simulated choria instances the emulator will host",
+        :type => :integer,
+        :optional => false,
+        :default => 1
 
   input :agents,
         :prompt => "Agents",
         :description => "Number of emulated* agents the emulator will host",
         :type => :integer,
-        :optional => true,
+        :optional => false,
         :default => 1
 
   input :collectives,
         :prompt => "Subcollectives",
         :description => "Number of subcollective the emulator will join",
         :type => :integer,
-        :optional => true,
+        :optional => false,
         :default => 1
 
   input :servers,
         :prompt => "Servers to connect to",
         :description => "Comma separated list of host:port pairs",
         :type => :string,
-        :optional => true
-
-  input :emulator,
-        :prompt => "Path to emulator binary",
-        :description => "Where to find the emulator binary",
-        :type => :string,
-        :optional => false
+        :maxlength => "256",
+        :optional => true,
+        :validation => "."
 
   input :monitor,
         :description => "Port to listen for monitoring requests",
         :prompt => "Monitor Port",
         :type => :integer,
-        :optional => true,
+        :optional => false,
         :default => 8080
+
+  input :tls,
+        :description => "Run with TLS enabled",
+        :prompt => "TLS",
+        :type => :boolean,
+        :optional => false,
+        :default => false
 
   output :status,
          :description => "true if the emulator started",
